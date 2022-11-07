@@ -1,13 +1,13 @@
 use juniper::{
     graphql_object, graphql_value, EmptySubscription, FieldError, FieldResult, RootNode,
 };
-use mysql::{from_row, params, prelude::*, Error as DBError, Row};
+use mysql::{params, prelude::*, Error as DBError, Row};
 
 use super::{
     product::{Product, ProductInput},
     user::{User, UserInput},
 };
-use crate::db::Pool;
+use crate::{db::Pool};
 
 pub struct Context {
     pub db_pool: Pool,
@@ -21,69 +21,36 @@ pub struct QueryRoot;
 impl QueryRoot {
     #[graphql(description = "List of all users")]
     fn users(context: &Context) -> FieldResult<Vec<User>> {
-        let mut conn = context.db_pool.get().unwrap();
-
-        let users = conn
-            .exec("SELECT * FROM user", ())
-            .unwrap()
-            .into_iter()
-            .map(User::from_row)
-            .collect();
-
-        Ok(users)
+        Ok(User::get_all(context))
     }
 
     #[graphql(description = "Get Single user reference by user ID")]
     fn user(context: &Context, id: String) -> FieldResult<User> {
-        let mut conn = context.db_pool.get().unwrap();
-
-        let user: Result<Option<Row>, DBError> =
-            conn.exec_first("SELECT * FROM user WHERE id=:id", params! {"id" => id});
-
-        if let Err(_err) = user {
-            return Err(FieldError::new(
+        let user = User::get_by_id(&id, context);
+        match user {
+            Some(user) => return Ok(user),
+            None => return Err(FieldError::new(
                 "User Not Found",
                 graphql_value!({ "not_found": "user not found" }),
-            ));
+            ))
         }
-
-        let (id, name, email) = from_row(user.unwrap().unwrap());
-        Ok(User { id, name, email })
     }
 
-    #[graphql(description = "List of all users")]
+    #[graphql(description = "List of all products")]
     fn products(context: &Context) -> FieldResult<Vec<Product>> {
-        let mut conn = context.db_pool.get().unwrap();
-
-        let products = conn
-            .exec("SELECT * FROM product", ())
-            .unwrap()
-            .into_iter()
-            .map(Product::from_row)
-            .collect();
-
-        Ok(products)
+        Ok(Product::get_all(context))
     }
 
     #[graphql(description = "Get Single user reference by user ID")]
     fn product(context: &Context, id: String) -> FieldResult<Product> {
-        let mut conn = context.db_pool.get().unwrap();
-        let product: Result<Option<Row>, DBError> =
-            conn.exec_first("SELECT * FROM user WHERE id=:id", params! {"id" => id});
-        if let Err(_err) = product {
-            return Err(FieldError::new(
+        let product = Product::get_by_id(&id, context);
+        match product {
+            Some(product) => return Ok(product),
+            None => return Err(FieldError::new(
                 "Product Not Found",
                 graphql_value!({ "not_found": "product not found" }),
-            ));
+            ))
         }
-
-        let (id, user_id, name, price) = from_row(product.unwrap().unwrap());
-        Ok(Product {
-            id,
-            user_id,
-            name,
-            price,
-        })
     }
 }
 

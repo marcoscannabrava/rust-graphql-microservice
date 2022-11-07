@@ -1,7 +1,6 @@
 use juniper::{graphql_object, GraphQLInputObject};
-use mysql::{from_row, params, prelude::*, Row};
 
-use crate::schemas::{product::Product, root::Context};
+use crate::{schemas::{product::Product, root::Context}};
 
 /// User
 #[derive(Default, Debug)]
@@ -9,13 +8,6 @@ pub struct User {
     pub id: String,
     pub name: String,
     pub email: String,
-}
-
-impl User {
-    pub(crate) fn from_row(row: Row) -> Self {
-        let (id, name, email) = from_row(row);
-        User { id, name, email }
-    }
 }
 
 #[derive(GraphQLInputObject)]
@@ -38,15 +30,6 @@ impl User {
     }
 
     fn products(&self, context: &Context) -> Vec<Product> {
-        let mut conn = context.db_pool.get().unwrap();
-
-        conn.exec(
-            "SELECT * FROM product WHERE user_id = :user_id",
-            params! { "user_id" => &self.id },
-        )
-        .unwrap()
-        .into_iter()
-        .map(Product::from_row)
-        .collect()
+        Product::get_by_user_id(&self.id, context)
     }
 }

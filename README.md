@@ -47,3 +47,8 @@ Open `http://localhost:8080/graphiql`. GraphQL provides its own documentation. C
   }
 }
 ```
+
+# Resources
+
+[Actix Documentation](https://actix.rs/docs/)
+[Juniper Book (GraphQL server for Rust)](https://graphql-rust.github.io/juniper/master/index.html)

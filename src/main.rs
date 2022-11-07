@@ -4,6 +4,7 @@ use actix_web::{middleware::Logger, web::Data, App, HttpServer};
 mod db;
 mod handlers;
 mod schemas;
+mod resolvers;
 
 use self::{db::get_db_pool, handlers::register};
 
