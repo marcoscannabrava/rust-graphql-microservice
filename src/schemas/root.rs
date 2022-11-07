@@ -21,6 +21,7 @@ impl QueryRoot {
     #[graphql(description = "List of all users")]
     fn users(context: &Context) -> FieldResult<Vec<User>> {
         Ok(User::get_all(context))
+        // TODO: add optional params (Enum?) to call User::filter and filter by any column
     }
 
     #[graphql(description = "Get Single user reference by user ID")]
@@ -42,7 +43,7 @@ impl QueryRoot {
         Ok(Product::get_all(context))
     }
 
-    #[graphql(description = "Get Single user reference by user ID")]
+    #[graphql(description = "Get Single product reference by user ID")]
     fn product(context: &Context, id: String) -> FieldResult<Product> {
         match Product::get_by_id(&id, context) {
             Some(product) => return Ok(product),
@@ -60,6 +61,7 @@ pub struct MutationRoot;
 
 #[graphql_object(Context = Context)]
 impl MutationRoot {
+    // Creates User
     fn create_user(context: &Context, user: UserInput) -> FieldResult<User> {
         match User::insert(context, user) {
             Ok(user) => Ok(user),
@@ -73,6 +75,7 @@ impl MutationRoot {
         }
     }
 
+    // Creates Product
     fn create_product(context: &Context, product: ProductInput) -> FieldResult<Product> {
         match Product::insert(context, product) {
             Ok(product) => Ok(product),

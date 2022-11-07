@@ -9,24 +9,31 @@
 
 ## Prerequisites
 
-- Docker and Docker-Compose or MySQL
+- Docker+Docker-Compose or MySQL
 
-## Setup
+## Setup and Run
 
 ```sh
-# Copy env file
-cp .env.example .env     # (only needed the first time)
+cp .env.example .env     # Copy env file (only needed the first time)
+```
 
-# Set up Database
+**Option 1: Generic**
+
+```sh
+# Set up Database (if using Docker)
 chmod +x mysql/start.sh  # give execution rights to db start script (only needed the first time)
 mysql/start.sh           # start MySQL database (runs seed script on the first time)
-```
 
-## Run
-
-```sh
+# Compile and Start Server
 cargo run
 ```
+
+**Option 2: VSCode Dev Environment**
+
+This repo includes `.vscode` settings to bootstrap the dev environment with the dockerized database when starting the debugger and requires the `rust-analyzer` extension.
+
+Shortcut: `Ctrl+Shift+D`, `Enter`.
+
 
 ## Test
 
@@ -50,5 +57,13 @@ Open `http://localhost:8080/graphiql`. GraphQL provides its own documentation. C
 
 # Resources
 
-[Actix Documentation](https://actix.rs/docs/)
-[Juniper Book (GraphQL server for Rust)](https://graphql-rust.github.io/juniper/master/index.html)
+- [Actix Documentation](https://actix.rs/docs/)
+- [Juniper Book (GraphQL server for Rust)](https://graphql-rust.github.io/juniper/master/index.html)
+
+___
+
+# TODO
+
+- [ ] filter by any column
+- [ ] automatically generate resolvers from struct items
+- [ ] schema/resolver boilerplate generator
