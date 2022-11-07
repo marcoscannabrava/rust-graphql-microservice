@@ -1,13 +1,12 @@
 use juniper::{
     graphql_object, graphql_value, EmptySubscription, FieldError, FieldResult, RootNode,
 };
-use mysql::{params, prelude::*, Error as DBError, Row};
 
 use super::{
     product::{Product, ProductInput},
     user::{User, UserInput},
 };
-use crate::{db::Pool};
+use crate::db::Pool;
 
 pub struct Context {
     pub db_pool: Pool,
@@ -29,10 +28,12 @@ impl QueryRoot {
         let user = User::get_by_id(&id, context);
         match user {
             Some(user) => return Ok(user),
-            None => return Err(FieldError::new(
-                "User Not Found",
-                graphql_value!({ "not_found": "user not found" }),
-            ))
+            None => {
+                return Err(FieldError::new(
+                    "User Not Found",
+                    graphql_value!({ "not_found": "user not found" }),
+                ))
+            }
         }
     }
 
@@ -43,13 +44,14 @@ impl QueryRoot {
 
     #[graphql(description = "Get Single user reference by user ID")]
     fn product(context: &Context, id: String) -> FieldResult<Product> {
-        let product = Product::get_by_id(&id, context);
-        match product {
+        match Product::get_by_id(&id, context) {
             Some(product) => return Ok(product),
-            None => return Err(FieldError::new(
-                "Product Not Found",
-                graphql_value!({ "not_found": "product not found" }),
-            ))
+            None => {
+                return Err(FieldError::new(
+                    "Product Not Found",
+                    graphql_value!({ "not_found": "product not found" }),
+                ))
+            }
         }
     }
 }
@@ -59,29 +61,10 @@ pub struct MutationRoot;
 #[graphql_object(Context = Context)]
 impl MutationRoot {
     fn create_user(context: &Context, user: UserInput) -> FieldResult<User> {
-        let mut conn = context.db_pool.get().unwrap();
-        let new_id = uuid::Uuid::new_v4().simple().to_string();
-
-        let insert: Result<Option<Row>, DBError> = conn.exec_first(
-            "INSERT INTO user(id, name, email) VALUES(:id, :name, :email)",
-            params! {
-                "id" => &new_id,
-                "name" => &user.name,
-                "email" => &user.email,
-            },
-        );
-
-        match insert {
-            Ok(_opt_row) => Ok(User {
-                id: new_id,
-                name: user.name,
-                email: user.email,
-            }),
+        match User::insert(context, user) {
+            Ok(user) => Ok(user),
             Err(err) => {
-                let msg = match err {
-                    DBError::MySqlError(err) => err.message,
-                    _ => "internal error".to_owned(),
-                };
+                let msg = err.to_string();
                 Err(FieldError::new(
                     "Failed to create new user",
                     graphql_value!({ "internal_error": msg }),
@@ -91,31 +74,10 @@ impl MutationRoot {
     }
 
     fn create_product(context: &Context, product: ProductInput) -> FieldResult<Product> {
-        let mut conn = context.db_pool.get().unwrap();
-        let new_id = uuid::Uuid::new_v4().simple().to_string();
-
-        let insert: Result<Option<Row>, DBError> = conn.exec_first(
-            "INSERT INTO product(id, user_id, name, price) VALUES(:id, :user_id, :name, :price)",
-            params! {
-                "id" => &new_id,
-                "user_id" => &product.user_id,
-                "name" => &product.name,
-                "price" => &product.price.to_owned(),
-            },
-        );
-
-        match insert {
-            Ok(_opt_row) => Ok(Product {
-                id: new_id,
-                user_id: product.user_id,
-                name: product.name,
-                price: product.price,
-            }),
+        match Product::insert(context, product) {
+            Ok(product) => Ok(product),
             Err(err) => {
-                let msg = match err {
-                    DBError::MySqlError(err) => err.message,
-                    _ => "internal error".to_owned(),
-                };
+                let msg = err.to_string();
                 Err(FieldError::new(
                     "Failed to create new product",
                     graphql_value!({ "internal_error": msg }),

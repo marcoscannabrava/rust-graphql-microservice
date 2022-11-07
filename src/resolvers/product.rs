@@ -1,6 +1,6 @@
 use mysql::{from_row, params, prelude::*, Error as DBError, Row};
 
-use crate::schemas::{product::Product, root::Context};
+use crate::schemas::{product::{Product, ProductInput}, root::Context};
 
 impl Product {
     pub(crate) fn from_row(row: Row) -> Self {
@@ -53,6 +53,31 @@ impl Product {
             .into_iter()
             .map(Product::from_row)
             .collect()
+    }
+
+    pub fn insert(context: &Context, product: ProductInput) -> Result<Product, DBError> {
+        let mut conn = context.db_pool.get().unwrap();
+        let new_id = uuid::Uuid::new_v4().simple().to_string();
+
+        let insert: Result<Option<Row>, DBError> = conn.exec_first(
+            "INSERT INTO product(id, user_id, name, price) VALUES(:id, :user_id, :name, :price)",
+            params! {
+                "id" => &new_id,
+                "user_id" => &product.user_id,
+                "name" => &product.name,
+                "price" => &product.price,
+            },
+        );
+
+        match insert {
+            Ok(_opt_row) => Ok(Product {
+                id: new_id,
+                user_id: product.user_id,
+                name: product.name,
+                price: product.price,
+            }),
+            Err(err) => Err(err)
+        }
     }
 }
 
