@@ -22,7 +22,7 @@ cp .env.example .env     # Copy env file (only needed the first time)
 ```sh
 # Set up Database (if using Docker)
 chmod +x mysql/start.sh  # give execution rights to db start script (only needed the first time)
-mysql/start.sh           # start MySQL database (runs seed script on the first time)
+mysql/start              # start MySQL database (runs seed script on the first time)
 
 # Compile and Start Server
 cargo run
